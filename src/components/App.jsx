@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { useState, useEffect } from 'react';
 
 import { fetchImagesWithQuery } from 'services/fetch-images';
 
@@ -10,87 +10,103 @@ import { Button } from './Button/Button';
 import { Loader } from './Loader/Loader';
 import { Notification } from './Notification/Notification';
 
-export class App extends Component {
-  state = {
-    images: [],
-    loading: false,
-    error: null,
-    searchBarQuery: '',
-    page: 1,
-    showModal: false,
-  };
+export function App() {
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [searchBarQuery, setSearchBarQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  // state = {
+  //   images: [],
+  //   loading: false,
+  //   error: null,
+  //   searchBarQuery: '',
+  //   page: 1,
+  //   showModal: false,
+  // };
 
-  componentDidUpdate(prevProps, prevState) {
-    const prevQuery = prevState.searchBarQuery;
-    const nextQuery = this.state.searchBarQuery;
-
-    if (prevQuery !== nextQuery) {
-      this.fetchImages();
+  useEffect(() => {
+    if (searchBarQuery === '') {
+      return;
     }
-
-    if (!this.state.loading) {
+    fetchImages();
+    if (!loading) {
       window.scrollTo({
         top: document.body.scrollHeight,
         behavior: 'smooth',
       });
     }
-  }
+  }, []);
 
-  fetchImages = () => {
-    const { searchBarQuery, page } = this.state;
-    this.setState({ loading: true });
+  // componentDidUpdate(prevProps, prevState) {
+  //   const prevQuery = prevState.searchBarQuery;
+  //   const nextQuery = this.state.searchBarQuery;
+
+  //   if (prevQuery !== nextQuery) {
+  //     this.fetchImages();
+  //   }
+
+  //   if (!this.state.loading) {
+  //     window.scrollTo({
+  //       top: document.body.scrollHeight,
+  //       behavior: 'smooth',
+  //     });
+  //   }
+  // }
+
+  const fetchImages = () => {
+    // const { searchBarQuery, page } = this.state;
+    setLoading(true);
     fetchImagesWithQuery(searchBarQuery, page)
-      .then(images =>
-        this.setState(prevState => ({
-          images: [...prevState.images, ...images],
-          page: prevState.page + 1,
-        }))
-      )
-      .catch(error => this.setState({ error }))
-      .finally(() => this.setState({ loading: false }));
+      .then(images => setImages(prevState => [...prevState, ...images]))
+      // setPage(page + 1);
+
+      .catch(error => setError(error))
+      .finally(() => setLoading(false));
   };
 
-  handleSubmitSearchBar = query => {
-    this.setState({ searchBarQuery: query, page: 1, images: [] });
+  const handleSubmitSearchBar = query => {
+    setSearchBarQuery(query);
+    setPage(1);
+    setImages([]);
   };
 
-  openModalImage = largeImage => {
-    this.setState({ showModal: largeImage });
+  const openModalImage = largeImage => {
+    setShowModal(largeImage);
   };
 
-  closeModalImage = () => {
-    this.setState({ showModal: false });
+  const closeModalImage = () => {
+    setShowModal(false);
   };
 
-  render() {
-    const { searchBarQuery, images, loading, error, showModal } = this.state;
-    return (
-      <Layout>
-        <Searchbar onSubmitSearch={this.handleSubmitSearchBar} />
-        {error && (
-          <Notification
-            message={`Whoops, something went wrong: ${error.message}`}
-          />
-        )}
+  // const { searchBarQuery, images, loading, error, showModal } = this.state;
+  return (
+    <Layout>
+      <Searchbar onSubmitSearch={handleSubmitSearchBar} />
+      {error && (
+        <Notification
+          message={`Whoops, something went wrong: ${error.message}`}
+        />
+      )}
 
-        {!searchBarQuery && <Notification message="Input image for search" />}
+      {!searchBarQuery && <Notification message="Input image for search" />}
 
-        {images.length > 0 && (
-          <ImageGallery images={images} onOpen={this.openModalImage} />
-        )}
+      {images.length > 0 && (
+        <ImageGallery images={images} onOpen={openModalImage} />
+      )}
 
-        {loading && <Loader />}
+      {loading && <Loader />}
 
-        {showModal && (
-          <Modal closeModal={this.closeModalImage}>
-            <img src={showModal} alt="" />
-          </Modal>
-        )}
+      {showModal && (
+        <Modal closeModal={closeModalImage}>
+          <img src={showModal} alt="" />
+        </Modal>
+      )}
 
-        {images.length > 0 && !loading && (
-          <Button onButtonClick={this.fetchImages}></Button>
-        )}
-      </Layout>
-    );
-  }
+      {images.length > 0 && !loading && (
+        <Button onButtonClick={fetchImages}></Button>
+      )}
+    </Layout>
+  );
 }
