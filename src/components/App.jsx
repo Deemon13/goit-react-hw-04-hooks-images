@@ -17,54 +17,55 @@ export function App() {
   const [searchBarQuery, setSearchBarQuery] = useState('');
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
-  // state = {
-  //   images: [],
-  //   loading: false,
-  //   error: null,
-  //   searchBarQuery: '',
-  //   page: 1,
-  //   showModal: false,
-  // };
 
   useEffect(() => {
-    if (searchBarQuery === '') {
+    // setLoading(true);
+    if (!searchBarQuery) {
       return;
     }
-    fetchImages();
-    if (!loading) {
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: 'smooth',
+
+    // setLoading(true);
+
+    fetchImages(searchBarQuery, page);
+    // .finally(setLoading(false));
+    // setLoading(false);
+  }, [searchBarQuery, page]);
+
+  const fetchImages = (query, page) => {
+    fetchImagesWithQuery(query, page)
+      .then(
+        images => {
+          console.log('then');
+          if (images.length !== 0) {
+            console.log('no error');
+            setImages(prevState => [...prevState, ...images]);
+          }
+          console.log('error');
+          setError(error);
+          return;
+        }
+        // setLoading(false);
+        // return;
+        // }
+        // setLoading(false);
+        // return;
+      )
+      .catch(error => {
+        console.log('error');
+        setError(error);
+      })
+      .finally(() => {
+        console.log('finally');
+        setLoading(false);
       });
-    }
-  }, []);
-
-  // componentDidUpdate(prevProps, prevState) {
-  //   const prevQuery = prevState.searchBarQuery;
-  //   const nextQuery = this.state.searchBarQuery;
-
-  //   if (prevQuery !== nextQuery) {
-  //     this.fetchImages();
-  //   }
-
-  //   if (!this.state.loading) {
-  //     window.scrollTo({
-  //       top: document.body.scrollHeight,
-  //       behavior: 'smooth',
-  //     });
-  //   }
-  // }
-
-  const fetchImages = () => {
-    // const { searchBarQuery, page } = this.state;
-    setLoading(true);
-    fetchImagesWithQuery(searchBarQuery, page)
-      .then(images => setImages(prevState => [...prevState, ...images]))
-      // setPage(page + 1);
-
-      .catch(error => setError(error))
-      .finally(() => setLoading(false));
   };
+
+  if (!loading) {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: 'smooth',
+    });
+  }
 
   const handleSubmitSearchBar = query => {
     setSearchBarQuery(query);
@@ -80,7 +81,6 @@ export function App() {
     setShowModal(false);
   };
 
-  // const { searchBarQuery, images, loading, error, showModal } = this.state;
   return (
     <Layout>
       <Searchbar onSubmitSearch={handleSubmitSearchBar} />
@@ -105,7 +105,7 @@ export function App() {
       )}
 
       {images.length > 0 && !loading && (
-        <Button onButtonClick={fetchImages}></Button>
+        <Button onButtonClick={() => setPage(page => page + 1)}></Button>
       )}
     </Layout>
   );
