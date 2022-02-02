@@ -5,8 +5,14 @@ const BASE_URL = 'https://pixabay.com/api/';
 axios.defaults.baseURL = BASE_URL;
 
 export const fetchImagesWithQuery = async (searchQuery, page) => {
-  const response = await axios.get(
-    `${BASE_URL}?q=${searchQuery}&page=${page}&key=${myKey}&image_type=all&orientation=horizontal&per_page=12`
-  );
-  return response.data.hits;
+  return await axios
+    .get(
+      `?q=${searchQuery}&page=${page}&key=${myKey}&image_type=all&orientation=horizontal&per_page=12`
+    )
+    .then(response => {
+      if (response.status === 200) {
+        return response.data.hits;
+      }
+      return Promise.reject(new Error(`Whoops`));
+    });
 };

@@ -10,57 +10,42 @@ import { Button } from './Button/Button';
 import { Loader } from './Loader/Loader';
 import { Notification } from './Notification/Notification';
 
+const Status = {
+  IDLE: 'idle',
+  PENDING: 'pending',
+  RESOLVED: 'resolved',
+  REJECTED: 'rejected',
+};
+
 export function App() {
   const [images, setImages] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [status, setStatus] = useState(Status.IDLE);
   const [searchBarQuery, setSearchBarQuery] = useState('');
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    // setLoading(true);
     if (!searchBarQuery) {
       return;
     }
 
-    // setLoading(true);
+    setStatus(Status.PENDING);
 
-    fetchImages(searchBarQuery, page);
-    // .finally(setLoading(false));
-    // setLoading(false);
+    fetchImagesWithQuery(searchBarQuery, page)
+      .then(images => {
+        if (images.length === 0) {
+          setStatus(Status.REJECTED);
+          return Promise.reject();
+        }
+        setImages(prevState => [...prevState, ...images]);
+        setStatus(Status.RESOLVED);
+      })
+      .catch(() => {
+        setStatus(Status.REJECTED);
+      });
   }, [searchBarQuery, page]);
 
-  const fetchImages = (query, page) => {
-    fetchImagesWithQuery(query, page)
-      .then(
-        images => {
-          console.log('then');
-          if (images.length !== 0) {
-            console.log('no error');
-            setImages(prevState => [...prevState, ...images]);
-          }
-          console.log('error');
-          setError(error);
-          return;
-        }
-        // setLoading(false);
-        // return;
-        // }
-        // setLoading(false);
-        // return;
-      )
-      .catch(error => {
-        console.log('error');
-        setError(error);
-      })
-      .finally(() => {
-        console.log('finally');
-        setLoading(false);
-      });
-  };
-
-  if (!loading) {
+  if (status === Status.RESOLVED) {
     window.scrollTo({
       top: document.body.scrollHeight,
       behavior: 'smooth',
@@ -84,9 +69,9 @@ export function App() {
   return (
     <Layout>
       <Searchbar onSubmitSearch={handleSubmitSearchBar} />
-      {error && (
+      {status === Status.REJECTED && (
         <Notification
-          message={`Whoops, something went wrong: ${error.message}`}
+          message={`Whoops, something went wrong with you query: '${searchBarQuery}' `}
         />
       )}
 
@@ -96,7 +81,7 @@ export function App() {
         <ImageGallery images={images} onOpen={openModalImage} />
       )}
 
-      {loading && <Loader />}
+      {status === Status.PENDING && <Loader />}
 
       {showModal && (
         <Modal closeModal={closeModalImage}>
@@ -104,7 +89,7 @@ export function App() {
         </Modal>
       )}
 
-      {images.length > 0 && !loading && (
+      {images.length > 0 && status === Status.RESOLVED && (
         <Button onButtonClick={() => setPage(page => page + 1)}></Button>
       )}
     </Layout>
